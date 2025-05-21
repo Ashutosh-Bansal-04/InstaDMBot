@@ -148,7 +148,7 @@ def main():
 
                 if success:
                     dms_sent += 1
-                    time.sleep(random.uniform(*DELAY_RANGE))
+                    time.sleep(random.uniform(5,20))
                 else:
                     print(f"[!] Skipping {target}")
 
