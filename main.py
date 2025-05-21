@@ -64,10 +64,13 @@ def login_instagram(driver, username, password):
     )
 
     driver.find_element(By.NAME, "username").send_keys(username)
+    time.sleep(1)
     driver.find_element(By.NAME, "password").send_keys(password)
+    time.sleep(2)
     driver.find_element(By.NAME, "password").send_keys(Keys.RETURN)
+    time.sleep(2)
 
-    time.sleep(random.uniform(5, 10))  # Wait for login to complete
+    time.sleep(random.uniform(7, 12))  # Wait for login to complete
 
 # === Message Sending Logic ===
 def try_message_button(driver):
@@ -136,7 +139,7 @@ def send_message(driver, username, message):
 
         # Message section opened
         print(f"[i] Message window opened for @{username}")
-        time.sleep(random.uniform(3, 5))
+        time.sleep(random.uniform(5, 10))
 
         # Just type the message directly (textarea usually auto-focused)
         # actions = webdriver.ActionChains(driver)
@@ -151,11 +154,13 @@ def send_message(driver, username, message):
 
         actions = webdriver.ActionChains(driver)
         actions.send_keys(formatted_message)
+        actions.send_keys(Keys.RETURN) # Final enter to send
         # sentences = [s.strip() for s in message.split('.') if s.strip()]
         # for sentence in sentences:
         #     actions.send_keys(sentence + '.')
         #     actions.send_keys(Keys.SHIFT + Keys.ENTER)
-        actions.send_keys(Keys.RETURN)  # Final enter to send
+#         for line in message.split("\n"):
+#             actions.send_keys(line).send_keys(Keys.SHIFT + Keys.ENTER)
         actions.perform()
 
         print(f"[✓] Message sent to @{username}")
