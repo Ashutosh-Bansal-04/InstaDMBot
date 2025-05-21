@@ -12,19 +12,36 @@ from selenium.webdriver.support import expected_conditions as EC
 MAX_DMS_PER_ACCOUNT = 10
 DELAY_RANGE = (3, 7)  # Random delay between actions
 
+# # === Load Files ===
+# def load_accounts(file_path):
+#     with open(file_path, "r") as f:
+#         return [tuple(line.strip().split(":")) for line in f.readlines()]
+
+# def load_usernames(file_path):
+#     with open(file_path, "r") as f:
+#         return [line.strip() for line in f.readlines()]
+
+# def load_messages(file_path):
+#     with open(file_path, "r", encoding="utf-8") as f:
+#         raw = f.read()
+#         return [msg.strip() for msg in raw.split("===") if msg.strip()]
 # === Load Files ===
 def load_accounts(file_path):
     with open(file_path, "r") as f:
         return [tuple(line.strip().split(":")) for line in f.readlines()]
 
-def load_usernames(file_path):
-    with open(file_path, "r") as f:
-        return [line.strip() for line in f.readlines()]
-
-def load_messages(file_path):
+def load_personalized_messages(file_path):
+    personalized = {}
     with open(file_path, "r", encoding="utf-8") as f:
-        raw = f.read()
-        return [msg.strip() for msg in raw.split("===") if msg.strip()]
+        for line in f:
+            if "-" in line:
+                username, msg = line.split("-", 1)
+                personalized[username.strip()] = msg.strip()
+    return personalized
+
+def log_successful_dm(username, log_file="successful_dms.txt"):
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(username + "\n")
 
 # === Setup Chrome ===
 def setup_driver():
@@ -105,6 +122,7 @@ def try_3dot_menu(driver):
 #     textarea.send_keys(Keys.RETURN)
 #     print(f"[✓] Message sent to @{username}")
 #     return True
+
 def send_message(driver, username, message):
     try:
         driver.get(f"https://www.instagram.com/{username}/")
@@ -121,10 +139,23 @@ def send_message(driver, username, message):
         time.sleep(random.uniform(3, 5))
 
         # Just type the message directly (textarea usually auto-focused)
+        # actions = webdriver.ActionChains(driver)
+        # for line in message.split("\n"):
+        #     actions.send_keys(line).send_keys(Keys.SHIFT, Keys.ENTER)
+        # actions.send_keys(Keys.RETURN)
+        # actions.perform()
+
+        # Build the message with line breaks after full stops
+        sentences = [s.strip() for s in message.split('.') if s.strip()]
+        formatted_message = "\n".join([s + '.' for s in sentences])
+
         actions = webdriver.ActionChains(driver)
-        for line in message.split("\n"):
-            actions.send_keys(line).send_keys(Keys.SHIFT, Keys.ENTER)
-        actions.send_keys(Keys.RETURN)
+        actions.send_keys(formatted_message)
+        # sentences = [s.strip() for s in message.split('.') if s.strip()]
+        # for sentence in sentences:
+        #     actions.send_keys(sentence + '.')
+        #     actions.send_keys(Keys.SHIFT + Keys.ENTER)
+        actions.send_keys(Keys.RETURN)  # Final enter to send
         actions.perform()
 
         print(f"[✓] Message sent to @{username}")
@@ -139,8 +170,8 @@ def send_message(driver, username, message):
 # === Main Logic ===
 def main():
     accounts = load_accounts("accounts.txt")
-    usernames = load_usernames("usernames.txt")
-    messages = load_messages("messages.txt")
+    personalized_messages = load_personalized_messages("personalized_messages.txt")
+
 
     for acc_index, (username, password) in enumerate(accounts):
         print(f"\n[+] Logging in with @{username}")
@@ -149,17 +180,18 @@ def main():
             login_instagram(driver, username, password)
             dms_sent = 0
 
-            for target in usernames:
+            for target, message in personalized_messages.items():
                 if dms_sent >= MAX_DMS_PER_ACCOUNT:
                     print(f"[i] Reached DM limit for @{username}")
                     break
 
-                message = random.choice(messages)
+                # message = personalized_messages.get(target, "Hi there! Just wanted to connect.")  # Fallback message
                 success = send_message(driver, target, message)
 
                 if success:
+                    log_successful_dm(target)
                     dms_sent += 1
-                    time.sleep(random.uniform(*DELAY_RANGE))
+                    time.sleep(random.uniform(5, 20))
                 else:
                     print(f"[!] Skipping {target}")
 
