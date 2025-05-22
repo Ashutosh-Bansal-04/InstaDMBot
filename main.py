@@ -1,5 +1,6 @@
 import time
 import random
+from gologin import GoLogin
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -26,9 +27,13 @@ DELAY_RANGE = (3, 7)  # Random delay between actions
 #         raw = f.read()
 #         return [msg.strip() for msg in raw.split("===") if msg.strip()]
 # === Load Files ===
+# def load_accounts(file_path):
+#     with open(file_path, "r") as f:
+#         return [tuple(line.strip().split(":")) for line in f.readlines()]
 def load_accounts(file_path):
     with open(file_path, "r") as f:
         return [tuple(line.strip().split(":")) for line in f.readlines()]
+
 
 def load_personalized_messages(file_path):
     personalized = {}
@@ -43,16 +48,31 @@ def log_successful_dm(username, log_file="successful_dms.txt"):
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(username + "\n")
 
-# === Setup Chrome ===
-def setup_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--start-maximized")
-    chrome_options.add_argument("--disable-notifications")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
+def setup_gologin_driver(profile_id):
+    gl = GoLogin({
+        "token": "YOUR_GLOGIN_API_TOKEN",  # Replace with your real token
+        "profile_id": profile_id
+    })
+
+    debugger_address = gl.start()
+    
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_experimental_option("debuggerAddress", debugger_address)
+    
     driver = webdriver.Chrome(options=chrome_options)
-    driver.implicitly_wait(10)
     return driver
+
+
+# === Setup Chrome ===
+# def setup_driver():
+#     chrome_options = Options()
+#     chrome_options.add_argument("--start-maximized")
+#     chrome_options.add_argument("--disable-notifications")
+#     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+#     chrome_options.add_experimental_option('useAutomationExtension', False)
+#     driver = webdriver.Chrome(options=chrome_options)
+#     driver.implicitly_wait(10)
+#     return driver
 
 # === Instagram Login ===
 def login_instagram(driver, username, password):
@@ -178,9 +198,15 @@ def main():
     personalized_messages = load_personalized_messages("personalized_messages.txt")
 
 
-    for acc_index, (username, password) in enumerate(accounts):
+    # for acc_index, (username, password) in enumerate(accounts):
+    #     print(f"\n[+] Logging in with @{username}")
+    #     # driver = setup_driver()
+    #     driver = setup_gologin_driver("YOUR_PROFILE_ID")
+    for acc_index, (username, password, profile_id) in enumerate(accounts):
         print(f"\n[+] Logging in with @{username}")
-        driver = setup_driver()
+        driver = setup_gologin_driver(profile_id)
+
+
         try:
             login_instagram(driver, username, password)
             dms_sent = 0
