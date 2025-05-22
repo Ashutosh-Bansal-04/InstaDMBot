@@ -57,7 +57,7 @@ def setup_driver():
 # === Instagram Login ===
 def login_instagram(driver, username, password):
     driver.get("https://www.instagram.com/accounts/login/")
-    time.sleep(random.uniform(*DELAY_RANGE))
+    time.sleep(random.uniform(5, 7))
 
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located((By.NAME, "username"))
