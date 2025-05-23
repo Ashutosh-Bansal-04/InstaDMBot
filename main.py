@@ -8,6 +8,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 # === CONFIGURATION ===
 MAX_DMS_PER_ACCOUNT = 10
@@ -50,16 +52,20 @@ def log_successful_dm(username, log_file="successful_dms.txt"):
 
 def setup_gologin_driver(profile_id):
     gl = GoLogin({
-        "token": "YOUR_GLOGIN_API_TOKEN",  # Replace with your real token
-        "profile_id": profile_id
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODJlMmI4NWJjNDA1NWUxNWUzZTMxODUiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2ODJmOTU1MjE3NzQwY2RlZGQxMDBkZTMifQ.tIUiyb74IlDpFdjuk-RaIYH_yzPbLR1ibvLrpONepXM",  
+        "profile_id": profile_id,
     })
 
-    debugger_address = gl.start()
-    
+    debugger_address = gl.start()  # starts the GoLogin browser
+
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_experimental_option("debuggerAddress", debugger_address)
-    
-    driver = webdriver.Chrome(options=chrome_options)
+
+    # Use ChromeDriverManager to match GoLogin Chrome version
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    driver.gologin = gl  # attach GoLogin instance to stop later
     return driver
 
 
