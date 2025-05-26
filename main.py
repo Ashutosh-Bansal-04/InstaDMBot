@@ -1,5 +1,6 @@
 import time
 import random
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -43,16 +44,44 @@ def log_successful_dm(username, log_file="successful_dms.txt"):
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(username + "\n")
 
-# === Setup Chrome ===
-def setup_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--start-maximized")
-    chrome_options.add_argument("--disable-notifications")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
-    driver = webdriver.Chrome(options=chrome_options)
+
+# Replace with your real API key
+DOLPHIN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiMjYwOTJhZWFiM2M1MWM0OTQ1ZTcxM2U2YzQ5Mzc0OWNkZjg2NWVjMzJlYTQzMzZkM2QyYTZhODkxYzNjOTc1MDFiOTgyNGEyMjEyMDdiYzkiLCJpYXQiOjE3NDgyNjE1NDcuNjU4MDkyLCJuYmYiOjE3NDgyNjE1NDcuNjU4MDk0LCJleHAiOjE3NTA4NTM1NDcuNjQ4ODU5LCJzdWIiOiI0NDA0MzgzIiwic2NvcGVzIjpbXSwidGVhbV9pZCI6NDMxMjA0OSwidGVhbV9wbGFuIjoiZnJlZSIsInRlYW1fcGxhbl9leHBpcmF0aW9uIjoxNzQ4MjYwOTQwfQ.M6cKRjVStuvaGw1JhPCRpSVLYo0SxaaIF0NtWzOD9_OklgTTxFTyk4qHbhzdtyPpnlgmpx-wdFsg6UVBA-tyYH4QHATCIc-vNpwp5EA_aWPXhGkaLRzPKFTG1HUEjbuhSc-JNXiOUjmSG_7JsMUY1PkT7Zh9r7AcUjW1fnnTaKu0GUsbDFTREesx-pa_e2onqchmNKzjZEv8gmz369BoElTYgBTK018In_PvxoKgNv3VKu5knYiV0G1-lpC8Zvvkg7MZ8urthOfi-q8WrTD7XD1xPJ2hHUSNPBiL8TuH5xyG1ZAr2mz7jRR2D7d6HJJ4svC8p7f4UxTDND7DOLN1qQXggUvJUP1iBktIlEKGxPL_m-RPBH_ZDH4RbSh6Ou7pjWHny0aPUwrcb4TjaZoS8T0ZqyTa7nEc155HwpQPBVrjZo-Mj7eZE42IjgjF3unT-hzZQhZU8B96tf8TzvbmynHU1KTHIk9fQ7nOfpEaIoIPEZtUUJIBwHQ5niOKlF37ogr-60NR_0wV8FHxccHo09c_-LvnNt8u-2TgpWuoTyTW6ynl6wRfn7HJbbwdfnI7Y_SRvbV72WYY4QkaaDT6tfguhJIFNJT63zPAlheI8tn0SWicHAD4gOlARpoe3pMDszLJpHbdAaMuuXR_7088znonfCyPlh3fF_UZXQDO8"
+
+def start_dolphin_profile(profile_id):
+    url = "http://localhost:3001/browser/start"
+    payload = {
+        "profile_id": profile_id,
+    }
+    headers = {
+        "Authorization": f"Bearer {DOLPHIN_API_KEY}"
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    data = response.json()
+    if not data.get("success"):
+        raise Exception(f"Failed to start profile: {data}")
+    return data["automation"]["port"]
+
+def setup_driver(profile_id):
+    port = start_dolphin_profile(profile_id)
+    options = webdriver.ChromeOptions()
+    driver = webdriver.Remote(
+        command_executor=f"http://localhost:{port}",
+        options=options
+    )
     driver.implicitly_wait(10)
     return driver
+
+# # === Setup Chrome ===
+# def setup_driver():
+#     chrome_options = Options()
+#     chrome_options.add_argument("--start-maximized")
+#     chrome_options.add_argument("--disable-notifications")
+#     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+#     chrome_options.add_experimental_option('useAutomationExtension', False)
+#     driver = webdriver.Chrome(options=chrome_options)
+#     driver.implicitly_wait(10)
+#     return driver
 
 # === Instagram Login ===
 def login_instagram(driver, username, password):
@@ -177,10 +206,17 @@ def main():
     accounts = load_accounts("accounts.txt")
     personalized_messages = load_personalized_messages("personalized_messages.txt")
 
+    # For each account, use corresponding Dolphin profile
+    profile_ids = ["612565928", "612566138", "612566190"]
 
     for acc_index, (username, password) in enumerate(accounts):
-        print(f"\n[+] Logging in with @{username}")
-        driver = setup_driver()
+        profile_id = profile_ids[acc_index]  # Match to account
+        print(f"\n[+] Using profile {profile_id} for @{username}")
+        driver = setup_driver(profile_id)
+
+        for acc_index, (username, password) in enumerate(accounts):
+            print(f"\n[+] Logging in with @{username}")
+            driver = setup_driver()
         try:
             login_instagram(driver, username, password)
             dms_sent = 0
