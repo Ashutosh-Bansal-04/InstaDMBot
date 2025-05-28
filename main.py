@@ -149,16 +149,18 @@ def send_message(driver, username, message):
         # actions.perform()
 
         # Build the message with line breaks after full stops
-        sentences = [s.strip() for s in message.split('.') if s.strip()]
-        formatted_message = "\n".join([s + '.' for s in sentences])
+        # sentences = [s.strip() for s in message.split('.') if s.strip()]
+        # formatted_message = "\n".join([s + '.' for s in sentences])
 
         actions = webdriver.ActionChains(driver)
-        actions.send_keys(formatted_message)
-        actions.send_keys(Keys.RETURN) # Final enter to send
-        # sentences = [s.strip() for s in message.split('.') if s.strip()]
-        # for sentence in sentences:
-        #     actions.send_keys(sentence + '.')
-        #     actions.send_keys(Keys.SHIFT + Keys.ENTER)
+        # actions.send_keys(formatted_message)
+        # actions.send_keys(Keys.RETURN) # Final enter to send
+        sentences = [s.strip() for s in message.split('.') if s.strip()]
+        for sentence in sentences:
+            actions.send_keys(sentence + '.')
+            # actions.send_keys(Keys.SHIFT + Keys.ENTER)
+            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+        actions.send_keys(Keys.RETURN)  # Final enter to send
 #         for line in message.split("\n"):
 #             actions.send_keys(line).send_keys(Keys.SHIFT + Keys.ENTER)
         actions.perform()
